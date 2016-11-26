@@ -31,12 +31,12 @@ require 'cunn'
 
 local hSize = 32
 model = nn.Sequential()
-model:add(nn.View(28 * 28)) --reshapes the image into a vector without copy
+--model:add(nn.View(28 * 28)) --reshapes the image into a vector without copy
 model:add(nn.Linear(28 * 28, hSize))
-model:add(nn.Tanh())
+--model:add(nn.Tanh())
 model:add(nn.Linear(hSize, 28 * 28))
-model:add(nn.Tanh())
-model:add(nn.View(28, 28))
+--model:add(nn.Tanh())
+--model:add(nn.View(28, 28))
 model:cuda()  -- ship to GPU
 
 -- check that we can propagate forward without errors
