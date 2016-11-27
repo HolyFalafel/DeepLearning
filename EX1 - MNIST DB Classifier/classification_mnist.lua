@@ -186,13 +186,18 @@ model:insert(nn.Dropout(0.9):cuda(), 8)
 
 require 'gnuplot'
 local range = torch.range(1, epochs)
-gnuplot.pngfigure('test.png')
+gnuplot.pngfigure('testLoss.png')
 gnuplot.plot({'trainLoss',trainLoss},{'testLoss',testLoss})
 gnuplot.xlabel('epochs')
 gnuplot.ylabel('Loss')
 gnuplot.plotflush()
 
 
+gnuplot.pngfigure('testError.png')
+gnuplot.plot({'trainError',trainError},{'testError',testError})
+gnuplot.xlabel('epochs')
+gnuplot.ylabel('Error')
+gnuplot.plotflush()
 
 
 
