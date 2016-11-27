@@ -6,6 +6,8 @@ luarocks install image
 ]]
 require 'image'
 local mnist = require 'mnist';
+--local optim = 
+require 'optim'
 local trainData = mnist.traindataset();
 local testData = mnist.testdataset();
 
@@ -31,12 +33,20 @@ require 'cunn'
 
 local hSize = 32
 model = nn.Sequential()
-model:add(nn.View(7 * 7)) --reshapes the image into a vector without copy
-model:add(nn.Linear(7 * 7, hSize))
+model:add(nn.View(28 * 28)) --reshapes the image into a vector without copy
+model:add(nn.Linear(28 * 28, hSize))
+model:add(nn.ReLU())
+model:add(nn.Linear(hSize, 16))
 model:add(nn.Tanh())
-model:add(nn.Linear(hSize, 7 * 7))
+model:add(nn.Linear(16, 3))
+model:add(nn.Sigmoid())
+model:add(nn.Linear(3, 16))
+model:add(nn.Sigmoid())
+model:add(nn.Linear(16, hSize))
 model:add(nn.Tanh())
-model:add(nn.View(7, 7))
+model:add(nn.Linear(hSize, 28 * 28))
+model:add(nn.Tanh())
+model:add(nn.View(28, 28))
 model:cuda()  -- ship to GPU
 
 -- check that we can propagate forward without errors
@@ -63,6 +73,8 @@ local epochs = 25
 local printEval = true
 local trainLoss = torch.Tensor(epochs)
 local testLoss = torch.Tensor(epochs)
+
+local confusion = optim.ConfusionMatrix(torch.range(0,9):totable())
 
 local timer = torch.Timer()
 
