@@ -9,7 +9,7 @@ criterion = nn.ClassNLLCriterion():cuda()
 require 'optim'
 batchSize = 128
 
-function forwardNet(data, labels)
+local function forwardNet(data, labels)
 	timer = torch.Timer()
 
     --another helpful function of optim is ConfusionMatrix
