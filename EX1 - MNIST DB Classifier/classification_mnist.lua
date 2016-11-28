@@ -146,7 +146,7 @@ for e = 1, epochs do
     end
 end
 
-model.testErr = testError[epochs]
+-- model.testErr = testError[epochs]
 
 -- save the model
 torch.save('network.model', model)
