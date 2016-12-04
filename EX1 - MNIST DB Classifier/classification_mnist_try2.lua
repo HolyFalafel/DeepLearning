@@ -40,7 +40,7 @@ model:add(nn.Tanh())
 -- model:add(nn.Linear(128, 64))
 -- model:add(nn.Sigmoid())
 model:add(nn.Linear(16, 7))
-model:add(nn.Relu())
+model:add(nn.ReLu())
 -- model = nn.Sequential()
 -- model:add(nn.View(28 * 28)) --reshapes the image into a vector without copy
 -- for i=1, #layerSize-1 do
