@@ -27,7 +27,7 @@ require 'cunn'
 
 local inputSize = 28*28
 local outputSize = 10
-local layerSize = {inputSize, 64,32,16,7,3}
+local layerSize = {inputSize,64,32,16,7,3}
 
 model = nn.Sequential()
 model:add(nn.View(inputSize )) --reshapes the image into a vector without copy
@@ -36,11 +36,11 @@ model:add(nn.ReLU())
 model:add(nn.Linear(layerSize[2], layerSize[3]))
 model:add(nn.Tanh())
 model:add(nn.Linear(layerSize[3], layerSize[4]))
-model:add(nn.Sigmoid())
-model:add(nn.Linear(layerSize[54], layerSize[5]))
-model:add(nn.Sigmoid())
-model:add(nn.Linear(layerSize[5], layerSize[#layerSize]))
+model:add(nn.ReLU())
+model:add(nn.Linear(layerSize[4], layerSize[5]))
 model:add(nn.Tanh())
+model:add(nn.Linear(layerSize[5], layerSize[#layerSize]))
+model:add(nn.ReLU())
 
 model:add(nn.Linear(layerSize[#layerSize], outputSize))
 model:add(nn.LogSoftMax())   -- f_i(x) = exp(x_i - shift) / sum_j exp(x_j - shift)
@@ -54,9 +54,8 @@ print('Number of parameters:', w:nElement()) --over-specified model
 
 
 ---- ### Classification criterion
-
-criterion = nn.ClassNLLCriterion():cuda()
---criterion =nn.CrossEntropyCriterion():cuda()
+--criterion = nn.ClassNLLCriterion():cuda()
+criterion =nn.CrossEntropyCriterion():cuda()
 
 ---	 ### predefined constants
 
@@ -117,7 +116,7 @@ end
 --- ### Train the network on training set, evaluate on separate set
 
 
-epochs = 35
+epochs = 55
 
 trainLoss = torch.Tensor(epochs)
 testLoss = torch.Tensor(epochs)
