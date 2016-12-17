@@ -1,15 +1,3 @@
---[[
-Due to interest of time, please prepared the data before-hand into a 4D torch
-ByteTensor of size 50000x3x32x32 (training) and 10000x3x32x32 (testing) 
-
-mkdir t5
-cd t5/
-git clone https://github.com/soumith/cifar.torch.git
-cd cifar.torch/
-th Cifar10BinToTensor.lua
-
-]]
-
 require 'torch'
 require 'image'
 require 'nn'
@@ -22,8 +10,8 @@ function saveTensorAsGrid(tensor,fileName)
 	image.save(fileName,grid)
 end
 
-local trainset = torch.load('/cifar.torch/cifar10-train.t7')
-local testset = torch.load('/cifar.torch/cifar10-test.t7')
+local trainset = torch.load('cifar.torch/cifar10-train.t7')
+local testset = torch.load('cifar.torch/cifar10-test.t7')
 
 local classes = {'airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'}
 
@@ -66,7 +54,7 @@ print(weights:size())
 --  ****************************************************************
 
 -- Load and normalize data:
---[[
+
 local redChannel = trainData[{ {}, {1}, {}, {}  }] -- this picks {all images, 1st channel, all vertical pixels, all horizontal pixels}
 print(#redChannel)
 
@@ -89,7 +77,7 @@ for i=1,3 do -- over each image channel
     testData[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
 end
 
-]]
+
 
 --  ****************************************************************
 --  Define our neural network
@@ -129,7 +117,7 @@ end
 --  Training the network
 --  ****************************************************************
 require 'optim'
---[[
+
 local batchSize = 128
 local optimState = {}
 
@@ -211,12 +199,12 @@ end
 
 plotError(trainError, testError, 'Classification Error')
 
-]]
+
 --  ****************************************************************
 --  Network predictions
 --  ****************************************************************
 
---[[
+
 model:evaluate()   --turn off dropout
 
 print(classes[testLabels[10] ])
@@ -230,7 +218,7 @@ for i=1,predicted:size(2) do
     print(classes[i],predicted[1][i])
 end
 
---]]
+
 
 --  ****************************************************************
 --  Visualizing Network Weights+Activations
