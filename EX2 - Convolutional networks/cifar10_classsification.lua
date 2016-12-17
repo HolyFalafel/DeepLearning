@@ -224,7 +224,7 @@ end
 --  Visualizing Network Weights+Activations
 --  ****************************************************************
 
-
+--[[
 local Weights_1st_Layer = model:get(1).weight
 local scaledWeights = image.scale(image.toDisplayTensor({input=Weights_1st_Layer,padding=2}),200)
 saveTensorAsGrid(scaledWeights,'Weights_1st_Layer.jpg')
@@ -244,4 +244,4 @@ for l=1,9 do
   end 
 end
 
-
+]]
