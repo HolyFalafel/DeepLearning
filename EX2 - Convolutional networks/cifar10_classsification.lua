@@ -20,17 +20,17 @@ local trainLabels = trainset.label:float():add(1)
 local testData = testset.data:float()
 local testLabels = testset.label:float():add(1)
 
-print(trainData:size())
+--print(trainData:size())
 
-saveTensorAsGrid(trainData:narrow(1,100,36),'train_100-136.jpg') -- display the 100-136 images in dataset
-print(classes[trainLabels[100]]) -- display the 100-th image class
+--saveTensorAsGrid(trainData:narrow(1,100,36),'train_100-136.jpg') -- display the 100-136 images in dataset
+--print(classes[trainLabels[100]]) -- display the 100-th image class
 
 
 --  *****************************************************************
 --  Let's take a look at a simple convolutional layer:
 --  *****************************************************************
 
-
+--[[
 local img = trainData[100]:cuda()
 print(img:size())
 
@@ -48,15 +48,15 @@ saveTensorAsGrid(output, 'convOut.jpg')
 local weights = conv.weight
 saveTensorAsGrid(weights, 'convWeights.jpg')
 print(weights:size())
-
+--]]
 --  ****************************************************************
 --  Full Example - Training a ConvNet on Cifar10
 --  ****************************************************************
 
 -- Load and normalize data:
 
-local redChannel = trainData[{ {}, {1}, {}, {}  }] -- this picks {all images, 1st channel, all vertical pixels, all horizontal pixels}
-print(#redChannel)
+--local redChannel = trainData[{ {}, {1}, {}, {}  }] -- this picks {all images, 1st channel, all vertical pixels, all horizontal pixels}
+--print(#redChannel)
 
 local mean = {}  -- store the mean, to normalize the test set in the future
 local stdv  = {} -- store the standard-deviation for the future
@@ -85,19 +85,19 @@ end
 
 local model = nn.Sequential()
 model:add(cudnn.SpatialConvolution(3, 32, 5, 5)) -- 3 input image channel, 32 output channels, 5x5 convolution kernel
-model:add(cudnn.SpatialMaxPooling(2,2,2,2))      -- A max-pooling operation that looks at 2x2 windows and finds the max.
 model:add(cudnn.ReLU(true))                          -- ReLU activation function
+model:add(cudnn.SpatialMaxPooling(2,2,2,2))      -- A max-pooling operation that looks at 2x2 windows and finds the max.
 model:add(nn.SpatialBatchNormalization(32))    --Batch normalization will provide quicker convergence
 model:add(cudnn.SpatialConvolution(32, 64, 3, 3))
 model:add(cudnn.SpatialMaxPooling(2,2,2,2))
 model:add(cudnn.ReLU(true))
 model:add(nn.SpatialBatchNormalization(64))
-model:add(cudnn.SpatialConvolution(64, 32, 3, 3))
-model:add(nn.View(32*4*4):setNumInputDims(3))  -- reshapes from a 3D tensor of 32x4x4 into 1D tensor of 32*4*4
-model:add(nn.Linear(32*4*4, 256))             -- fully connected layer (matrix multiplication between input and weights)
+model:add(cudnn.SpatialConvolution(64, 8, 3, 3))
+model:add(nn.View(8*4*4):setNumInputDims(3))  -- reshapes from a 3D tensor of 32x4x4 into 1D tensor of 32*4*4
+model:add(nn.Linear(8*4*4, 128))             -- fully connected layer (matrix multiplication between input and weights)
 model:add(cudnn.ReLU(true))
 model:add(nn.Dropout(0.5))                      --Dropout layer with p=0.5
-model:add(nn.Linear(256, #classes))            -- 10 is the number of outputs of the network (in this case, 10 digits)
+model:add(nn.Linear(128, #classes))            -- 10 is the number of outputs of the network (in this case, 10 digits)
 model:add(nn.LogSoftMax())                     -- converts the output to a log-probability. Useful for classificati
 
 model:cuda()
@@ -173,7 +173,7 @@ end
 
 ---------------------------------------------------------------------
 
-epochs = 25
+epochs = 30 --50
 trainLoss = torch.Tensor(epochs)
 testLoss = torch.Tensor(epochs)
 trainError = torch.Tensor(epochs)
@@ -224,7 +224,7 @@ end
 --  Visualizing Network Weights+Activations
 --  ****************************************************************
 
---[[
+
 local Weights_1st_Layer = model:get(1).weight
 local scaledWeights = image.scale(image.toDisplayTensor({input=Weights_1st_Layer,padding=2}),200)
 saveTensorAsGrid(scaledWeights,'Weights_1st_Layer.jpg')
@@ -244,4 +244,3 @@ for l=1,9 do
   end 
 end
 
-]]
