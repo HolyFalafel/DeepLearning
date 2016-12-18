@@ -1,0 +1,228 @@
+[?1034hChannel 1, Mean: 125.30691804687	
+Channel 1, Standard Deviation: 62.993219892912	
+Channel 2, Mean: 122.95039414062	
+Channel 2, Standard Deviation: 62.088708246722	
+Channel 3, Mean: 113.86538318359	
+Channel 3, Standard Deviation: 66.704900292063	
+Number of parameters:	24322	
+nn.Sequential {
+  [input -> (1) -> (2) -> (3) -> (4) -> (5) -> (6) -> (7) -> (8) -> (9) -> (10) -> (11) -> (12) -> (13) -> (14) -> (15) -> output]
+  (1): cudnn.SpatialConvolution(3 -> 64, 5x5)
+  (2): cudnn.ReLU
+  (3): cudnn.SpatialMaxPooling(2x2, 2,2)
+  (4): nn.SpatialBatchNormalization (4D) (64)
+  (5): cudnn.SpatialConvolution(64 -> 16, 3x3)
+  (6): cudnn.SpatialMaxPooling(2x2, 2,2)
+  (7): cudnn.ReLU
+  (8): nn.SpatialBatchNormalization (4D) (16)
+  (9): cudnn.SpatialConvolution(16 -> 8, 3x3)
+  (10): nn.View(128)
+  (11): nn.Linear(128 -> 64)
+  (12): cudnn.ReLU
+  (13): nn.Dropout(0.500000)
+  (14): nn.Linear(64 -> 10)
+  (15): nn.LogSoftMax
+}
+Epoch 5:	
+Training error: 0.4005608974359	Training Loss: 1.1237816787683	
+Test error: 0.37079326923077	Test Loss: 1.033555691823	
+ConfusionMatrix:
+[[     611      35      90      10      22       7       9      21     136      57]   61.222% 	[class: airplane]
+ [      17     781       8      10       4       7       5      10      34     123]   78.178% 	[class: automobile]
+ [      81       5     461      67     134     103      55      49      27      17]   46.146% 	[class: bird]
+ [      14       6     127     309      63     313      62      54      28      21]   30.993% 	[class: cat]
+ [      25       5     146      29     506      71      47     147      18       6]   50.600% 	[class: deer]
+ [       7       2      96     130      46     586      10      95      16       9]   58.776% 	[class: dog]
+ [       7       6      60      95      74      28     703      13       5       9]   70.300% 	[class: frog]
+ [      13       3      40      27      43      93       4     742       5      27]   74.423% 	[class: horse]
+ [      76      33      13      12       3       4       2       3     823      28]   82.548% 	[class: ship]
+ [      18      85      13      12       3       6       9      21      73     760]]  76.000% 	[class: truck]
+ + average row correct: 62.918699085712% 
+ + average rowUcol correct (VOC measure): 46.953803598881% 
+ + global correct: 62.920673076923%	
+Epoch 10:	
+Training error: 0.3502203525641	Training Loss: 1.0020522496639	
+Test error: 0.32682291666667	Test Loss: 0.91536304201835	
+ConfusionMatrix:
+[[     730      23      84      10      13       5       7      15      76      35]   73.146% 	[class: airplane]
+ [      23     826       3       5       2       1       5       3      30     101]   82.683% 	[class: automobile]
+ [      86       6     515      60      85      97      89      32      13      16]   51.552% 	[class: bird]
+ [      20      12      86     347      46     316     105      25      19      21]   34.804% 	[class: cat]
+ [      31       3     110      44     550      64      98      85      10       5]   55.000% 	[class: deer]
+ [       9       1      57     138      41     662      26      48      11       4]   66.399% 	[class: dog]
+ [       8       5      47      68      26      17     811       6       6       6]   81.100% 	[class: frog]
+ [      19       7      46      21      60     125       6     699       1      13]   70.110% 	[class: horse]
+ [      89      31      16      10       1       6       7       1     816      20]   81.846% 	[class: ship]
+ [      34     102       7       6       4       6       8      15      53     765]]  76.500% 	[class: truck]
+ + average row correct: 67.314000427723% 
+ + average rowUcol correct (VOC measure): 51.613454222679% 
+ + global correct: 67.317708333333%	
+Epoch 15:	
+Training error: 0.33151041666667	Training Loss: 0.93490887742776	
+Test error: 0.34655448717949	Test Loss: 0.97429045729148	
+ConfusionMatrix:
+[[     673      23      69      15      45       6      10      19      99      39]   67.435% 	[class: airplane]
+ [      17     802       4      17       3       5      19       1      23     108]   80.280% 	[class: automobile]
+ [      70       4     497      89     103      71      97      35      25       8]   49.750% 	[class: bird]
+ [       9       9      61     440      67     212     140      25      21      13]   44.132% 	[class: cat]
+ [      22       2     101      76     518      45     153      66      13       4]   51.800% 	[class: deer]
+ [       5       0      48     210      62     572      36      44      18       2]   57.372% 	[class: dog]
+ [       4       1      44      55      42      10     833       4       5       2]   83.300% 	[class: frog]
+ [       9       2      46      53      55     142      16     659       1      14]   66.098% 	[class: horse]
+ [      62      41      14      18       9       2      19       1     805      26]   80.742% 	[class: ship]
+ [      21     114       8      39       3      19      23      13      35     725]]  72.500% 	[class: truck]
+ + average row correct: 65.340994298458% 
+ + average rowUcol correct (VOC measure): 49.575142860413% 
+ + global correct: 65.344551282051%	
+Epoch 20:	
+Training error: 0.31969150641026	Training Loss: 0.905602845626	
+Test error: 0.31019631410256	Test Loss: 0.87499759212518	
+ConfusionMatrix:
+[[     721      15      77      20      20       3       5       9      98      30]   72.244% 	[class: airplane]
+ [      25     826       3       2       1       1       7       2      41      91]   82.683% 	[class: automobile]
+ [      77       7     612      66      91      44      66      17      14       5]   61.261% 	[class: bird]
+ [      23       7     109     486      55     160      93      20      32      12]   48.746% 	[class: cat]
+ [      23       2     107      66     637      20      71      57      14       3]   63.700% 	[class: deer]
+ [       9       6      75     276      52     510      18      41       6       4]   51.153% 	[class: dog]
+ [       8       5      64      76      45       5     784       4       8       1]   78.400% 	[class: frog]
+ [      22       3      78      35      62      77       4     702       5       9]   70.411% 	[class: horse]
+ [      63      22      13      14       3       2      11       0     853      16]   85.557% 	[class: ship]
+ [      39      92       4      18       4       1       5      23      58     756]]  75.600% 	[class: truck]
+ + average row correct: 68.975603580475% 
+ + average rowUcol correct (VOC measure): 53.786873519421% 
+ + global correct: 68.980368589744%	
+Epoch 25:	
+Training error: 0.30835336538462	Training Loss: 0.86824996440839	
+Test error: 0.30378605769231	Test Loss: 0.86219848654209	
+ConfusionMatrix:
+[[     733      35      60      13      24       5       2      22      70      34]   73.447% 	[class: airplane]
+ [      15     898       2       4       1       0       1       1      18      59]   89.890% 	[class: automobile]
+ [      79      13     487      77     132      76      64      46      14      11]   48.749% 	[class: bird]
+ [      18       7      46     441      70     275      59      40      20      21]   44.233% 	[class: cat]
+ [      20       4      56      46     670      44      46     102       9       3]   67.000% 	[class: deer]
+ [       7       6      30     169      53     637      13      71       8       3]   63.892% 	[class: dog]
+ [       8       5      37      86      69      23     756       3       7       6]   75.600% 	[class: frog]
+ [      12       3      16      30      57      86       3     773       2      15]   77.533% 	[class: horse]
+ [      64      46      16      13       8       2       4       5     817      22]   81.946% 	[class: ship]
+ [      23     154       5      12       1       2       1      26      37     739]]  73.900% 	[class: truck]
+ + average row correct: 69.618833959103% 
+ + average rowUcol correct (VOC measure): 54.227945506573% 
+ + global correct: 69.621394230769%	
+Epoch 30:	
+Training error: 0.29741586538462	Training Loss: 0.84409980330712	
+Test error: 0.30228365384615	Test Loss: 0.85772718145297	
+ConfusionMatrix:
+[[     740      25      76      11      20       3       2      22      66      33]   74.148% 	[class: airplane]
+ [      24     847       3       5       1       1       4       1      20      93]   84.785% 	[class: automobile]
+ [      74       8     591      62      88      36      72      43      16       9]   59.159% 	[class: bird]
+ [      19      14      87     487      76     161      89      28      18      18]   48.847% 	[class: cat]
+ [      21       5      92      69     628      24      63      85      10       3]   62.800% 	[class: deer]
+ [      10       4      75     234      45     547      17      50      10       5]   54.865% 	[class: dog]
+ [       6       6      48      75      47      15     788       6       4       5]   78.800% 	[class: frog]
+ [      13       4      47      38      61      67       4     743       0      20]   74.524% 	[class: horse]
+ [      88      45      16       9       5       2       9       2     800      21]   80.241% 	[class: ship]
+ [      28      93       3      12       2       3       3      24      37     795]]  79.500% 	[class: truck]
+ + average row correct: 69.766766130924% 
+ + average rowUcol correct (VOC measure): 54.496475458145% 
+ + global correct: 69.771634615385%	
+Epoch 35:	
+Training error: 0.29298878205128	Training Loss: 0.82783758838971	
+Test error: 0.30378605769231	Test Loss: 0.8609557946523	
+ConfusionMatrix:
+[[     752      15      57      20      19       5       3      24      63      40]   75.351% 	[class: airplane]
+ [      18     784       4       8       5       0       7       5      19     149]   78.478% 	[class: automobile]
+ [      74       3     559      66      98      73      52      47      16      11]   55.956% 	[class: bird]
+ [      15       5      61     397      75     285      75      47      13      24]   39.819% 	[class: cat]
+ [      22       2      78      47     679      46      33      80      11       2]   67.900% 	[class: deer]
+ [      11       1      36     137      51     670      16      65       5       5]   67.202% 	[class: dog]
+ [       9       0      60      72      80      24     743       5       4       3]   74.300% 	[class: frog]
+ [      14       1      30      21      66      94       2     758       0      11]   76.028% 	[class: horse]
+ [      78      36       9      20       4       4       7       2     784      53]   78.636% 	[class: ship]
+ [      27      57       5      16       4       5       0      36      25     825]]  82.500% 	[class: truck]
+ + average row correct: 69.617018997669% 
+ + average rowUcol correct (VOC measure): 54.330478608608% 
+ + global correct: 69.621394230769%	
+Epoch 40:	
+Training error: 0.2885016025641	Training Loss: 0.81739230094812	
+Test error: 0.29927884615385	Test Loss: 0.85311394012891	
+ConfusionMatrix:
+[[     726      31      72      17      20       8       3      22      65      34]   72.745% 	[class: airplane]
+ [      21     866       5       2       2       1       5       0      23      74]   86.687% 	[class: automobile]
+ [      65       5     600      69      82      50      68      39      14       7]   60.060% 	[class: bird]
+ [      34      11      85     489      55     178      71      35      26      13]   49.047% 	[class: cat]
+ [      25       4      94      54     666      28      53      62      12       2]   66.600% 	[class: deer]
+ [      10       4      51     206      45     596      23      51      10       1]   59.779% 	[class: dog]
+ [      10       4      70      73      45      14     768       2      11       3]   76.800% 	[class: frog]
+ [      18       5      40      33      65      87       5     729       1      14]   73.119% 	[class: horse]
+ [      77      53      14      15       3       5       5       7     773      45]   77.533% 	[class: ship]
+ [      31     104       8      11       3       7       4      19      30     783]]  78.300% 	[class: truck]
+ + average row correct: 70.067067742348% 
+ + average rowUcol correct (VOC measure): 54.774594008923% 
+ + global correct: 70.072115384615%	
+Epoch 45:	
+Training error: 0.28084935897436	Training Loss: 0.79442009574328	
+Test error: 0.29667467948718	Test Loss: 0.83730123364008	
+ConfusionMatrix:
+[[     729      26      55      18      11       5       8      12     107      27]   73.046% 	[class: airplane]
+ [      12     872       4       3       2       1       7       1      33      64]   87.287% 	[class: automobile]
+ [      89       4     553      59      89      62      72      40      23       8]   55.355% 	[class: bird]
+ [      20      11      74     478      57     197      95      26      23      16]   47.944% 	[class: cat]
+ [      26       2      83      64     633      24      77      77      11       3]   63.300% 	[class: deer]
+ [      12       4      45     211      48     601      16      51       6       3]   60.281% 	[class: dog]
+ [      10       2      54      59      35      12     814       5       7       2]   81.400% 	[class: frog]
+ [      22       5      35      43      55      72       8     741       4      12]   74.323% 	[class: horse]
+ [      49      42      15      16       2       1      10       3     843      16]   84.554% 	[class: ship]
+ [      30     112       5      18       0       6       4      22      45     758]]  75.800% 	[class: truck]
+ + average row correct: 70.329004526138% 
+ + average rowUcol correct (VOC measure): 55.041329860687% 
+ + global correct: 70.332532051282%	
+Epoch 50:	
+Training error: 0.27690304487179	Training Loss: 0.78147850984182	
+Test error: 0.29126602564103	Test Loss: 0.84741581097627	
+ConfusionMatrix:
+[[     724      14      65      19      33       5       9      27      71      31]   72.545% 	[class: airplane]
+ [      21     800       7      11       1       2       8       3      39     107]   80.080% 	[class: automobile]
+ [      67       4     545      65     100      64      73      57      17       7]   54.555% 	[class: bird]
+ [      21       8      63     518      72     163      80      47      16       9]   51.956% 	[class: cat]
+ [      15       2      60      50     709      20      48      84      10       2]   70.900% 	[class: deer]
+ [      14       1      39     221      60     590      14      49       6       3]   59.178% 	[class: dog]
+ [       7       1      46      73      58      14     794       4       3       0]   79.400% 	[class: frog]
+ [       6       2      22      37      56      73       7     788       1       5]   79.037% 	[class: horse]
+ [      62      26      13      25       6       3      10       3     818      31]   82.046% 	[class: ship]
+ [      30      61       5      22       9      11       4      38      30     790]]  79.000% 	[class: truck]
+ + average row correct: 70.869637131691% 
+ + average rowUcol correct (VOC measure): 55.817278027534% 
+ + global correct: 70.873397435897%	
+automobile	
+  3
+ 32
+ 32
+[torch.LongStorage of size 3]
+
+Columns 1 to 6
+ 8.5852e-04  9.6195e-01  7.8434e-06  1.2075e-05  5.1928e-06  3.0777e-07
+
+Columns 7 to 10
+ 2.9343e-05  1.6486e-07  4.1954e-03  3.2942e-02
+[torch.CudaTensor of size 1x10]
+
+airplane	0.0008585206232965	
+automobile	0.96194928884506	
+bird	7.8434050010401e-06	
+cat	1.2075012818968e-05	
+deer	5.1928386710642e-06	
+dog	3.0777479764765e-07	
+frog	2.9342771085794e-05	
+horse	1.6486194454046e-07	
+ship	0.0041953790932894	
+truck	0.032941907644272	
+Input Image	
+Layer 	1	cudnn.SpatialConvolution(3 -> 64, 5x5)	
+Layer 	2	cudnn.ReLU	
+Layer 	3	cudnn.SpatialMaxPooling(2x2, 2,2)	
+Layer 	4	nn.SpatialBatchNormalization (4D) (64)	
+Layer 	5	cudnn.SpatialConvolution(64 -> 16, 3x3)	
+Layer 	6	cudnn.SpatialMaxPooling(2x2, 2,2)	
+Layer 	7	cudnn.ReLU	
+Layer 	8	nn.SpatialBatchNormalization (4D) (16)	
+Layer 	9	cudnn.SpatialConvolution(16 -> 8, 3x3)	
