@@ -112,8 +112,8 @@ local function Block(...)
 end
 
 
-Block(3,64,5,5,1,1,2,2)
-Block(64,32,1,1)
+Block(3,128,5,5,1,1,2,2)
+Block(128,32,1,1)
 Block(32,16,1,1)
 model:add(nn.SpatialMaxPooling(3,3,2,2):ceil())
 model:add(nn.Dropout())
