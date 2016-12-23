@@ -3,7 +3,6 @@ require 'image'
 require 'nn'
 require 'cunn'
 require 'cudnn'
---require './dataAugmentation.lua'
 
 function saveTensorAsGrid(tensor,fileName) 
 	local padding = 1
@@ -56,10 +55,6 @@ for i=1,3 do -- over each image channel
 end
 
 
-
---  ****************************************************************
---  Define our neural network
---  ****************************************************************
 local model = nn.Sequential()
 
 local function Block(...)
@@ -70,26 +65,60 @@ local function Block(...)
   return model
 end
 
---danny
---model:add(nn.BatchFlip():float())
-Block(3,128,5,5,1,1,2,2)
-Block(128,32,1,1)
+-- building block
+local function ConvBNReLU(nInputPlane, nOutputPlane)
+  model:add(nn.SpatialConvolution(nInputPlane, nOutputPlane, 3,3, 1,1, 1,1))
+  model:add(nn.SpatialBatchNormalization(nOutputPlane,1e-3))
+  model:add(nn.ReLU(true))
+  return model
+end
+-- Will use "ceil" MaxPooling because we want to save as much feature space as we can
+local MaxPooling = nn.SpatialMaxPooling
+
+--[[
+Block(3,64,5,5,1,1,2,2)
+Block(64,32,1,1)
 Block(32,16,1,1)
 model:add(nn.SpatialMaxPooling(3,3,2,2):ceil())
 model:add(nn.Dropout())
 Block(16,32,5,5,1,1,2,2)
-Block(32,64,1,1)
---Block(64,32,1,1)
+Block(32,32,1,1)
 --Block(192,192,1,1)
 model:add(nn.SpatialAveragePooling(3,3,2,2):ceil())
 model:add(nn.Dropout())
-----Block(32,32,3,3,1,1,1,1)
-Block(64,32,3,3,1,1,1,1)
+Block(32,32,3,3,1,1,1,1)
 --Block(192,192,1,1)
 Block(32,10,1,1)
 model:add(nn.SpatialAveragePooling(8,8,1,1):ceil())
 model:add(nn.View(10))
 model:add(nn.LogSoftMax()) 
+]]
+
+ConvBNReLU(3,64):add(nn.Dropout(0.3))
+ConvBNReLU(64,64)
+model:add(MaxPooling(2,2,2,2):ceil())
+ConvBNReLU(64,128):add(nn.Dropout(0.4))
+ConvBNReLU(128,128)
+model:add(MaxPooling(2,2,2,2):ceil())
+ConvBNReLU(128,256):add(nn.Dropout(0.4))
+ConvBNReLU(256,256):add(nn.Dropout(0.4))
+ConvBNReLU(256,256)
+model:add(MaxPooling(2,2,2,2):ceil())
+ConvBNReLU(256,512):add(nn.Dropout(0.4))
+ConvBNReLU(512,512):add(nn.Dropout(0.4))
+ConvBNReLU(512,512)
+model:add(MaxPooling(2,2,2,2):ceil())
+ConvBNReLU(512,512):add(nn.Dropout(0.4))
+ConvBNReLU(512,512):add(nn.Dropout(0.4))
+ConvBNReLU(512,512)
+model:add(MaxPooling(2,2,2,2):ceil())
+model:add(nn.View(512))
+model:add(nn.Dropout(0.5))
+model:add(nn.Linear(512,512))
+model:add(nn.BatchNormalization(512))
+model:add(nn.ReLU(true))
+model:add(nn.Dropout(0.5))
+model:add(nn.Linear(512,10))
 
 model:cuda()
 criterion = nn.ClassNLLCriterion():cuda()
@@ -130,13 +159,6 @@ function forwardNet(data,labels, train)
         local y = model:forward(x)
         local err = criterion:forward(y, yt)
         lossAcc = lossAcc + err
-		
-		print('#x')
-		print(#x)
-		print('#y')
-		print(#y)
-		print('#yt')
-		print(#yt)
         confusion:batchAdd(y,yt)
         
         if train then
@@ -193,8 +215,6 @@ for e = 1, epochs do
     trainLoss[e], trainError[e] = forwardNet(trainData, trainLabels, true)
     print('after train loss')
     testLoss[e], testError[e], confusion = forwardNet(testData, testLabels, false)
-    -- Danny trying data augmentation
-    --trainData = BatchFlip:updateOutput(trainData)
     print ('after test loss')
 
     if e % 5 == 0 then
@@ -229,4 +249,29 @@ print(predicted:exp()) -- the output of the network is Log-Probabilities. To con
 print('saving the model as network.model')
 -- save the model
 torch.save('network.model', model)
+
+
+--  ****************************************************************
+--  Visualizing Network Weights+Activations
+--  ****************************************************************
+
+
+local Weights_1st_Layer = model:get(1).weight
+local scaledWeights = image.scale(image.toDisplayTensor({input=Weights_1st_Layer,padding=2}),200)
+saveTensorAsGrid(scaledWeights,'Weights_1st_Layer.jpg')
+
+
+print('Input Image')
+saveTensorAsGrid(testData[100],'testImg100.jpg')
+model:forward(testData[100]:view(1,3,32,32):cuda())
+for l=1,9 do
+  print('Layer ' ,l, tostring(model:get(l)))
+  local layer_output = model:get(l).output[1]
+  saveTensorAsGrid(layer_output,'Layer'..l..'-'..tostring(model:get(l))..'.jpg')
+  if ( l == 5 or l == 9 )then
+	local Weights_lst_Layer = model:get(l).weight
+	local scaledWeights = image.scale(image.toDisplayTensor({input=Weights_lst_Layer[1],padding=2}),200)
+	saveTensorAsGrid(scaledWeights,'Weights_'..l..'st_Layer.jpg')
+  end 
+end
 

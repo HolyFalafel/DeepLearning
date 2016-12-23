@@ -30,6 +30,12 @@ local function forwardNet(data, labels)
         local y = model:forward(x)
         --local err = criterion:forward(y, yt)
         --lossAcc = lossAcc + err
+		print('#x')
+		print(#x)
+		print('#y')
+		print(#y)
+		print('#yt')
+		print(#yt)
         confusion:batchAdd(y,yt)
     end
     
@@ -71,6 +77,11 @@ function load_model()
 		testData[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
 	end
 	
+	print("#data")
+	print(#testData)
+	
+	print("#labels")
+	print(#testLabels)
 	-- run on test set
 	testError = forwardNet(testData, testLabels)
 
