@@ -33,9 +33,6 @@ local testLabels = testset.label:float():add(1)
 
 -- Load and normalize data:
 
---local redChannel = trainData[{ {}, {1}, {}, {}  }] -- this picks {all images, 1st channel, all vertical pixels, all horizontal pixels}
---print(#redChannel)
-
 local mean = {}  -- store the mean, to normalize the test set in the future
 local stdv  = {} -- store the standard-deviation for the future
 for i=1,3 do -- over each image channel
@@ -131,12 +128,6 @@ function forwardNet(data,labels, train)
         local err = criterion:forward(y, yt)
         lossAcc = lossAcc + err
 		
-		print('#x')
-		print(#x)
-		print('#y')
-		print(#y)
-		print('#yt')
-		print(#yt)
         confusion:batchAdd(y,yt)
         
         if train then
@@ -171,7 +162,7 @@ end
 
 ---------------------------------------------------------------------
 print("epoch time")
-epochs = 150 --50
+epochs = 250 --50
 trainLoss = torch.Tensor(epochs)
 testLoss = torch.Tensor(epochs)
 trainError = torch.Tensor(epochs)
@@ -193,8 +184,6 @@ for e = 1, epochs do
     trainLoss[e], trainError[e] = forwardNet(trainData, trainLabels, true)
     print('after train loss')
     testLoss[e], testError[e], confusion = forwardNet(testData, testLabels, false)
-    -- Danny trying data augmentation
-    --trainData = BatchFlip:updateOutput(trainData)
     print ('after test loss')
 
     if e % 5 == 0 then
@@ -221,10 +210,6 @@ saveTensorAsGrid(testData[10],'testImg10.jpg')
 local predicted = model:forward(testData[10]:view(1,3,32,32):cuda())
 print(predicted:exp()) -- the output of the network is Log-Probabilities. To convert them to probabilities, you have to take e^x 
 
--- assigned a probability to each classes
--- for i=1,predicted:size(2) do
-    -- print(classes[i],predicted[1][i])
--- end
 
 print('saving the model as network.model')
 -- save the model
