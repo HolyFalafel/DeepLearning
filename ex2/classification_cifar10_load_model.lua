@@ -1,5 +1,6 @@
 local mnist = require 'mnist';
 local mnist = require 'mnist';
+require 'cifar10_classification_ex2_augmentation.lua'
 require 'torch'
 require 'nn'
 require 'cunn'
