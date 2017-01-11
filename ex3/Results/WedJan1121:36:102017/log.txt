@@ -1,0 +1,56 @@
+2017-01-11 21:36:11 [program started on Wed Jan 11 21:36:11 2017] 
+2017-01-11 21:36:11 [command line arguments] 
+2017-01-11 21:36:11 seed 123 
+2017-01-11 21:36:11 earlyStop 5 
+2017-01-11 21:36:11 initWeight 0.08 
+2017-01-11 21:36:11 LRDecay 0 
+2017-01-11 21:36:11 batchSize 50 
+2017-01-11 21:36:11 numLayers 2 
+2017-01-11 21:36:11 decayRate 2 
+2017-01-11 21:36:11 model LSTM 
+2017-01-11 21:36:11 constBatchSize false 
+2017-01-11 21:36:11 gradClip 5 
+2017-01-11 21:36:11 LR 0.002 
+2017-01-11 21:36:11 seqLength 50 
+2017-01-11 21:36:11 load  
+2017-01-11 21:36:11 nGPU 1 
+2017-01-11 21:36:11 epochDecay 5 
+2017-01-11 21:36:11 devid 1 
+2017-01-11 21:36:11 save /home/dannysem@st.technion.ac.il/DeepLearning/ex3/Results/WedJan1121:36:102017 
+2017-01-11 21:36:11 checkpoint 0 
+2017-01-11 21:36:11 type cuda 
+2017-01-11 21:36:11 momentum 0 
+2017-01-11 21:36:11 rnnSize 128 
+2017-01-11 21:36:11 weightDecay 0 
+2017-01-11 21:36:11 threads 8 
+2017-01-11 21:36:11 optimization rmsprop 
+2017-01-11 21:36:11 dropout 0.5 
+2017-01-11 21:36:11 shuffle false 
+2017-01-11 21:36:11 optState false 
+2017-01-11 21:36:11 epoch 100 
+2017-01-11 21:36:11 [----------------------] 
+2017-01-11 21:36:11 
+==> Network 
+2017-01-11 21:36:11 nn.Sequential {
+  [input -> (1) -> (2) -> (3) -> output]
+  (1): nn.LookupTable
+  (2): nn.Sequential {
+    [input -> (1) -> (2) -> (3) -> (4) -> output]
+    (1): nn.LSTM(128 -> 128, 256)
+    (2): nn.Dropout(0.500000)
+    (3): nn.LSTM(128 -> 128, 256)
+    (4): nn.Dropout(0.500000)
+  }
+  (3): nn.TemporalModule {
+    [input -> (1) -> output]
+    (1): nn.Linear(128 -> 10000)
+  }
+} 
+2017-01-11 21:36:11 
+==>1553168 Parameters 
+2017-01-11 21:36:11 
+==> Criterion 
+2017-01-11 21:36:11 nn.CrossEntropyCriterion 
+2017-01-11 21:36:11 
+Epoch 1
+ 
