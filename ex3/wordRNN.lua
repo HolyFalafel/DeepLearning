@@ -14,7 +14,8 @@ cmd:text()
 cmd:text('==>Options')
 
 cmd:text('===>Data Options')
-cmd:option('-shuffle',            false,                       'shuffle training samples')
+-- cmd:option('-shuffle',            false,                       'shuffle training samples')
+cmd:option('-shuffle',            true,                       'shuffle training samples')
 
 cmd:text('===>Model And Training Regime')
 cmd:option('-model',              'LSTM',                      'Recurrent model [RNN, iRNN, LSTM, GRU]')
@@ -29,11 +30,11 @@ cmd:option('-momentum',           0,                           'momentum')
 cmd:option('-batchSize',          50,                          'batch size')
 cmd:option('-decayRate',          2,                           'exponential decay rate')
 cmd:option('-initWeight',         0.08,                        'uniform weight initialization range')
-cmd:option('-earlyStop',          5,                           'number of bad epochs to stop after')
+cmd:option('-earlyStop',          15,                           'number of bad epochs to stop after -default 5')
 cmd:option('-optimization',       'rmsprop',                   'optimization method')
 cmd:option('-gradClip',           5,                           'clip gradients at this value')
 cmd:option('-epoch',              100,                         'number of epochs to train')
-cmd:option('-epochDecay',         5,                           'number of epochs to start decay learning rate')
+cmd:option('-epochDecay',         15,                           'number of epochs to start decay learning rate')
 
 cmd:text('===>Platform Optimization')
 cmd:option('-threads',            8,                           'number of threads')
@@ -90,7 +91,7 @@ else
     modelConfig.recurrent = nn.Sequential()
     for i=1, opt.numLayers do
       modelConfig.recurrent:add(rnn(hiddenSize, opt.rnnSize, opt.initWeight))
-     -- modelConfig.recurrent:add(nn.TemporalModule(nn.BatchNormalization(opt.rnnSize)))
+      modelConfig.recurrent:add(nn.TemporalModule(nn.BatchNormalization(opt.rnnSize)))
       if opt.dropout > 0 then
         modelConfig.recurrent:add(nn.Dropout(opt.dropout))
       end
