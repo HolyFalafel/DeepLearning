@@ -36,13 +36,13 @@ cmd:option('--bn', false, 'use batch normalization. Only supported with --lstm')
 cmd:option('--gru', false, 'use Gated Recurrent Units (nn.GRU instead of nn.Recurrent)')
 cmd:option('--seqlen', 5, 'sequence length : back-propagate through time (BPTT) for this many time-steps')
 cmd:option('--inputsize', -1, 'size of lookup table embeddings. -1 defaults to hiddensize[1]')
-cmd:option('--hiddensize', '{200}', 'number of hidden units used at output of each recurrent layer. When more than one is specified, RNN/LSTMs/GRUs are stacked')
+cmd:option('--hiddensize', '{138}', 'number of hidden units used at output of each recurrent layer. When more than one is specified, RNN/LSTMs/GRUs are stacked')
 cmd:option('--dropout', 0.25, 'apply dropout with this probability after each rnn layer. dropout <= 0 disables it.')
 -- data
 cmd:option('--batchsize', 32, 'number of examples per batch')
 cmd:option('--trainsize', -1, 'number of train examples seen between each epoch')
 cmd:option('--validsize', -1, 'number of valid examples used for early stopping and cross-validation') 
-cmd:option('--savepath', paths.concat('./save/', 'rnnlm'), 'path to directory where experiment log (includes model) will be saved')
+cmd:option('--savepath', './output/'..os.date():gsub(' ',''), 'path to directory where experiment log (includes model) will be saved')
 cmd:option('--id', '', 'id string of this experiment (used to name output file) (defaults to a unique id)')
 
 cmd:text()
@@ -318,6 +318,7 @@ while opt.maxepoch <= 0 or epoch <= opt.maxepoch do
       -- save best version of model
       xplog.minvalppl = ppl
       xplog.epoch = epoch 
+      -- local filename = paths.concat(opt.savepath, opt.id..'.t7')
       local filename = paths.concat(opt.savepath, opt.id..'.t7')
       print("Found new minima. Saving to "..filename)
       torch.save(filename, xplog)
@@ -329,26 +330,20 @@ while opt.maxepoch <= 0 or epoch <= opt.maxepoch do
    end
    
    	  -- ********************* Plots *********************
-	  -- trainLoss[epoch] = LossTrain
-	  -- validLoss[epoch] = LossVal
-	  -- testLoss[epoch] = LossTest
-	  
-	  -- trainPerplexity[epoch] = torch.exp(LossTrain)
-	  -- validPerplexity[epoch] = torch.exp(LossVal)
-	  -- testPerplexity[epoch] = torch.exp(LossTest)
-	  
+	  require 'gnuplot'
+	  local range = torch.range(1, epoch)
 	  local plotFilename = paths.concat(opt.savepath, 'testLoss.png')
 	  gnuplot.pngfigure(plotFilename)
-	  gnuplot.plot({'trainLoss',trainLoss},{'validLoss',validLoss},{'testLoss',testLoss})
+	  gnuplot.plot({'trainLoss',trainLoss[{{1,epoch}}]},{'validLoss',validLoss[{{1,epoch}}]},{'testLoss',testLoss[{{1,epoch}}]})
 	  gnuplot.xlabel('epochs')
 	  gnuplot.ylabel('Loss')
 	  gnuplot.plotflush()
 	  
 	  plotFilename = paths.concat(opt.savepath, 'testPerplexity.png')
 	  gnuplot.pngfigure(plotFilename)
-	  gnuplot.plot({'trainPerplexity',trainPerplexity},{'validPerplexity',validPerplexity},{'testPerplexity',testPerplexity})
+	  gnuplot.plot({'trainPerplexity',trainPerplexity[{{1,epoch}}]},{'validPerplexity',validPerplexity[{{1,epoch}}]},{'testPerplexity',testPerplexity[{{1,epoch}}]})
 	  gnuplot.xlabel('epochs')
-	  gnuplot.ylabel('Loss')
+	  gnuplot.ylabel('Perplexity')
 	  gnuplot.plotflush()
    	  -- ********************* Plots *********************
 
@@ -357,7 +352,7 @@ while opt.maxepoch <= 0 or epoch <= opt.maxepoch do
 end
 
 -- ********************* Plots *********************
-local range = torch.range(1, epochs)
+local range = torch.range(1, epoch)
 local plotFilename = paths.concat(opt.savepath, 'testLoss.png')
 gnuplot.pngfigure(plotFilename)
 gnuplot.plot({'trainLoss',trainLoss},{'validLoss',validLoss},{'testLoss',testLoss})
@@ -369,9 +364,9 @@ plotFilename = paths.concat(opt.savepath, 'testPerplexity.png')
 gnuplot.pngfigure(plotFilename)
 gnuplot.plot({'trainPerplexity',trainPerplexity},{'validPerplexity',validPerplexity},{'testPerplexity',testPerplexity})
 gnuplot.xlabel('epochs')
-gnuplot.ylabel('Loss')
+gnuplot.ylabel('Perplexity')
 gnuplot.plotflush()
 -- ********************* Plots *********************
 
 print("Evaluate model using : ")
-print("th scripts/evaluate-rnnlm.lua --xplogpath "..paths.concat(opt.savepath, opt.id..'.t7')..(opt.cuda and ' --cuda' or ''))
+print("th evaluate-rnnlm.lua --xplogpath "..paths.concat(opt.savepath, opt.id..'.t7')..(opt.cuda and ' --cuda' or ''))
