@@ -12,7 +12,7 @@ cmd:text()
 cmd:text('Training recurrent networks on word-level text dataset - Penn Treebank')
 cmd:text()
 cmd:text('==>Options')
-
+ 
 cmd:text('===>Data Options')
 -- cmd:option('-shuffle',            false,                       'shuffle training samples')
 cmd:option('-shuffle',            true,                       'shuffle training samples')
@@ -22,7 +22,7 @@ cmd:option('-model',              'LSTM',                      'Recurrent model 
 cmd:option('-seqLength',          50,                          'number of timesteps to unroll for')
 cmd:option('-rnnSize',            128,                         'size of rnn hidden layer')
 cmd:option('-numLayers',          2,                           'number of layers in the LSTM')
-cmd:option('-dropout',            0.5,                           'dropout p value')
+cmd:option('-dropout',            0.3,                           'dropout p value')
 cmd:option('-LR',                 2e-3,                        'learning rate')
 cmd:option('-LRDecay',            0,                           'learning rate decay (in # samples)')
 cmd:option('-weightDecay',        0,                           'L2 penalty on the weights')
@@ -79,10 +79,13 @@ data = {
 }
 local vocabSize = #decoder
 ----------------------------------------------------------------------
+-- Testing a loaded model
+isTestMode = false
 
 if paths.filep(opt.load) then
     modelConfig = torch.load(opt.load)
     print('==>Loaded Net from: ' .. opt.load)
+	isTestMode = true
 else
     modelConfig = {}
     local rnnTypes = {LSTM = nn.LSTM, RNN = nn.RNN, GRU = nn.GRU, iRNN = nn.iRNN}
@@ -101,52 +104,143 @@ else
     modelConfig.classifier = nn.Linear(opt.rnnSize, vocabSize)
 end
 
-modelConfig.classifier:share(modelConfig.embedder, 'weight', 'gradWeight')
 local trainingConfig = require 'utils.trainRecurrent'
-local train = trainingConfig.train
 local evaluate = trainingConfig.evaluate
 local sample = trainingConfig.sample
-local optimState = trainingConfig.optimState
-local saveModel = trainingConfig.saveModel
 
-local logFilename = paths.concat(opt.save,'LossRate.log')
-local log = optim.Logger(logFilename)
-local decreaseLR = EarlyStop(1,opt.epochDecay)
-local stopTraining = EarlyStop(opt.earlyStop, opt.epoch)
-local epoch = 1
+-- Testing only
+if isTestMode then
+	evaluate(data.testData)
+	print('\nSampled Text:\n' .. sample('Buy low, sell high is the', 50, true))
+-- Training, validating and testing
+else
+	modelConfig.classifier:share(modelConfig.embedder, 'weight', 'gradWeight')
+	local train = trainingConfig.train
+	local optimState = trainingConfig.optimState
+	local saveModel = trainingConfig.saveModel
 
-repeat
-  print('\nEpoch ' .. epoch ..'\n')
-  LossTrain = train(data.trainingData)
-  saveModel(epoch)
-  if opt.optState then
-    torch.save(optStateFilename .. '_epoch_' .. epoch .. '.t7', optimState)
-  end
-  print('\nTraining Perplexity: ' .. torch.exp(LossTrain))
+	local logFilename = paths.concat(opt.save,'LossRate.log')
+	local log = optim.Logger(logFilename)
+	local decreaseLR = EarlyStop(1,opt.epochDecay)
+	local stopTraining = EarlyStop(opt.earlyStop, opt.epoch)
+	local epoch = 1
 
-  local LossVal = evaluate(data.validationData)
+	-- ********************* Plots *********************
+	epochs = opt.epoch
+	trainLoss = torch.Tensor(epochs):zero()
+	validLoss = torch.Tensor(epochs):zero()
+	testLoss = torch.Tensor(epochs):zero()
+	trainPerplexity = torch.Tensor(epochs):zero()
+	validPerplexity = torch.Tensor(epochs):zero()
+	testPerplexity = torch.Tensor(epochs):zero()
+	trainError = torch.Tensor(epochs):zero()
+	validError = torch.Tensor(epochs):zero()
+	testError = torch.Tensor(epochs):zero()
 
-  print('\nValidation Perplexity: ' .. torch.exp(LossVal))
+	require 'gnuplot'
+	local range = torch.range(1, epochs)
+	local plotFilename = paths.concat(opt.save, 'testLoss.png')
+	gnuplot.pngfigure(plotFilename)
+	gnuplot.plot({'trainLoss',trainLoss},{'validLoss',validLoss},{'testLoss',testLoss})
+	gnuplot.xlabel('epochs')
+	gnuplot.ylabel('Loss')
+	gnuplot.plotflush()
 
-  local LossTest = evaluate(data.testData)
+	plotFilename = paths.concat(opt.save, 'testPerplexity.png')
+	gnuplot.pngfigure(plotFilename)
+	gnuplot.plot({'trainPerplexity',trainPerplexity},{'validPerplexity',validPerplexity},{'testPerplexity',testPerplexity})
+	gnuplot.xlabel('epochs')
+	gnuplot.ylabel('Loss')
+	gnuplot.plotflush()
 
-  --print('\nSampled Text:\n' .. sample('the meaning of life is', 50, true))
+	-- plotFilename = paths.concat(opt.save, 'testError.png')
+	-- gnuplot.pngfigure(plotFilename)
+	-- gnuplot.plot({'trainError',trainError},{'testError',testError})
+	-- gnuplot.xlabel('epochs')
+	-- gnuplot.ylabel('Error')
+	-- gnuplot.plotflush()
 
-  print('\nTest Perplexity: ' .. torch.exp(LossTest))
-  log:add{['Training Loss']= LossTrain, ['Validation Loss'] = LossVal, ['Test Loss'] = LossTest}
-  log:style{['Training Loss'] = '-', ['Validation Loss'] = '-', ['Test Loss'] = '-'}
-  log:plot()
-  epoch = epoch + 1
+	repeat
+	  print('\nEpoch ' .. epoch ..'\n')
+	  LossTrain = train(data.trainingData)
+	  if epoch % 20 == 0 then
+		saveModel(epoch)
+	  end
+	  if opt.optState then
+		torch.save(optStateFilename .. '_epoch_' .. epoch .. '.t7', optimState)
+	  end
+	  print('\nTraining Perplexity: ' .. torch.exp(LossTrain))
 
-  if decreaseLR:update(LossVal) then
-    optimState.learningRate = optimState.learningRate / opt.decayRate
-    print("Learning Rate decreased to: " .. optimState.learningRate)
-    decreaseLR = EarlyStop(1,1)
-    decreaseLR:reset()
-  end
+	  local LossVal = evaluate(data.validationData)
 
-until stopTraining:update(LossVal)
+	  print('\nValidation Perplexity: ' .. torch.exp(LossVal))
 
-local lowestLoss, bestIteration = stopTraining:lowest()
+	  local LossTest = evaluate(data.testData)
+	  
+	  print('\nSampled Text:\n' .. sample('Buy low, sell high is the', 50, true))
+	  
+	  print('\nTest Perplexity: ' .. torch.exp(LossTest))
+	  
+	  -- ********************* Plots *********************
+	  trainLoss[epoch] = LossTrain
+	  validLoss[epoch] = LossVal
+	  testLoss[epoch] = LossTest
+	  
+	  trainPerplexity[epoch] = torch.exp(LossTrain)
+	  validPerplexity[epoch] = torch.exp(LossVal)
+	  testPerplexity[epoch] = torch.exp(LossTest)
+	  
+	  local range = torch.range(1, epochs)
+	  local plotFilename = paths.concat(opt.save, 'testLoss.png')
+	  gnuplot.pngfigure(plotFilename)
+	  gnuplot.plot({'trainLoss',trainLoss},{'validLoss',validLoss},{'testLoss',testLoss})
+	  gnuplot.xlabel('epochs')
+	  gnuplot.ylabel('Loss')
+	  gnuplot.plotflush()
+	  
+	  plotFilename = paths.concat(opt.save, 'testPerplexity.png')
+	  gnuplot.pngfigure(plotFilename)
+	  gnuplot.plot({'trainPerplexity',trainPerplexity},{'validPerplexity',validPerplexity},{'testPerplexity',testPerplexity})
+	  gnuplot.xlabel('epochs')
+	  gnuplot.ylabel('Loss')
+	  gnuplot.plotflush()
 
-print("Best Iteration was " .. bestIteration .. ", With a validation loss of: " .. lowestLoss)
+
+	  log:add{['Training Loss']= LossTrain, ['Validation Loss'] = LossVal, ['Test Loss'] = LossTest}
+	  log:style{['Training Loss'] = '-', ['Validation Loss'] = '-', ['Test Loss'] = '-'}
+	  log:plot()
+	  epoch = epoch + 1
+
+	  if decreaseLR:update(LossVal) then
+		optimState.learningRate = optimState.learningRate / opt.decayRate
+		print("Learning Rate decreased to: " .. optimState.learningRate)
+		decreaseLR = EarlyStop(1,1)
+		decreaseLR:reset()
+	  end
+
+	until stopTraining:update(LossVal)
+
+	local lowestLoss, bestIteration = stopTraining:lowest()
+
+	saveModel("finish")
+
+	-- ********************* Plots *********************
+	--trainLoss[epoch] = LossTrain
+	--testLoss[epoch] = LossTest
+	local range = torch.range(1, epochs)
+	local plotFilename = paths.concat(opt.save, 'testLoss.png')
+	gnuplot.pngfigure(plotFilename)
+	gnuplot.plot({'trainLoss',trainLoss},{'validLoss',validLoss},{'testLoss',testLoss})
+	gnuplot.xlabel('epochs')
+	gnuplot.ylabel('Loss')
+	gnuplot.plotflush()
+
+	plotFilename = paths.concat(opt.save, 'testPerplexity.png')
+	gnuplot.pngfigure(plotFilename)
+	gnuplot.plot({'trainPerplexity',trainPerplexity},{'validPerplexity',validPerplexity},{'testPerplexity',testPerplexity})
+	gnuplot.xlabel('epochs')
+	gnuplot.ylabel('Loss')
+	gnuplot.plotflush()
+
+	print("Best Iteration was " .. bestIteration .. ", With a validation loss of: " .. lowestLoss)
+end
