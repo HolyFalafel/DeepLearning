@@ -20,9 +20,9 @@ cmd:option('-shuffle',            true,                       'shuffle training 
 cmd:text('===>Model And Training Regime')
 cmd:option('-model',              'LSTM',                      'Recurrent model [RNN, iRNN, LSTM, GRU]')
 cmd:option('-seqLength',          50,                          'number of timesteps to unroll for')
-cmd:option('-rnnSize',            128,                         'size of rnn hidden layer')
+cmd:option('-rnnSize',            134,                         'size of rnn hidden layer')
 cmd:option('-numLayers',          2,                           'number of layers in the LSTM')
-cmd:option('-dropout',            0.3,                           'dropout p value')
+cmd:option('-dropout',            0.25,                           'dropout p value')
 cmd:option('-LR',                 2e-3,                        'learning rate')
 cmd:option('-LRDecay',            0,                           'learning rate decay (in # samples)')
 cmd:option('-weightDecay',        0,                           'L2 penalty on the weights')
@@ -94,7 +94,7 @@ else
     modelConfig.recurrent = nn.Sequential()
     for i=1, opt.numLayers do
       modelConfig.recurrent:add(rnn(hiddenSize, opt.rnnSize, opt.initWeight))
-      modelConfig.recurrent:add(nn.TemporalModule(nn.BatchNormalization(opt.rnnSize)))
+      --modelConfig.recurrent:add(nn.BatchNormalization(opt.rnnSize))
       if opt.dropout > 0 then
         modelConfig.recurrent:add(nn.Dropout(opt.dropout))
       end
