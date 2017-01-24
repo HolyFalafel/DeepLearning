@@ -12,6 +12,15 @@ cmd:text()
 cmd:text('Testing recurrent networks on word-level text dataset - Penn Treebank')
 cmd:text()
 cmd:text('==>Options')
+-- danny
+cmd:text('===>Model And Training Regime')
+cmd:option('-seqLength',          50,                          'number of timesteps to unroll for')
+cmd:option('-batchSize',          50,                          'batch size')
+cmd:text('===>Platform Optimization')
+cmd:option('-type',               'cuda',                      'float or cuda')
+cmd:option('-devid',              1,                           'device ID (if using CUDA)')
+cmd:option('-seed',               123,                         'torch manual random number generator seed')
+cmd:option('-nGPU',               1,                           'num of gpu devices used')
 
 cmd:text('===>Save/Load Options')
 cmd:option('-load',               '/home/dannysem@st.technion.ac.il/DeepLearning/ex3/Results/MonJan2308:27:022017/Net_40.t7',                          'load existing net weights')
@@ -27,7 +36,17 @@ opt = cmd:parse(arg or {})
 --torch.setnumthreads(opt.threads)
 --torch.manualSeed(opt.seed)
 torch.setdefaulttensortype('torch.FloatTensor')
-
+--sequential criterion
+local criterion = nn.CrossEntropyCriterion()--ClassNLLCriterion()
+local seqCriterion = nn.TemporalCriterion(criterion)
+local TensorType = 'torch.CudaTensor'
+criterion = criterion:cuda()
+if opt.type =='cuda' then
+    require 'cutorch'
+    require 'cunn'
+    cutorch.setDevice(opt.devid)
+    cutorch.manualSeed(opt.seed)
+end
 ----------------------------------------------------------------------
 local trainWordVec, testWordVec, valWordVec, decoder, decoder_, vocab
 
@@ -47,9 +66,34 @@ data = {
   encode = encodeFunc(vocab, 'word')
 }
 local vocabSize = #decoder
+
+local embedder
+local recurrent
+local classifier
 ----------------------------------------------------------------------
+-- danny add function
+local function reshapeData(wordVec, seqLength, batchSize)
+    local offset = offset or 0
+    local length = wordVec:nElement()
+    local numBatches = torch.floor(length / (batchSize * seqLength))
+
+    local batchWordVec = wordVec.new():resize(numBatches, batchSize, seqLength)
+    local endWords = wordVec.new():resize(numBatches, batchSize, 1)
+
+    local endIdxs = torch.LongTensor()
+    for i=1, batchSize do
+        local startPos = torch.round((i - 1) * length / batchSize ) + 1
+        local sliceLength = seqLength * numBatches
+        local endPos = startPos + sliceLength - 1
+
+        batchWordVec:select(2,i):copy(wordVec:narrow(1, startPos, sliceLength))
+    endIdxs:range(startPos + seqLength, endPos + 1, seqLength)
+endWords:select(2,i):copy(wordVec:index(1, endIdxs))
+  end
+  return batchWordVec, endWords
+end
 ----------------------------------------------------------------------
-local function ForwardSeq(dataVec, train)
+local function ForwardSeq(dataVec, train, model)
 
     local data, labels = reshapeData(dataVec, opt.seqLength, opt.batchSize )
     local sizeData = data:size(1)
@@ -116,12 +160,12 @@ local function ForwardSingle(dataVec)
 end
 
 -----------------------------------------------------------------------------------------
-local function evaluate(dataVec)
+local function evaluate(dataVec, model)
     model:evaluate()
-    return ForwardSeq(dataVec, false)
+    return ForwardSeq(dataVec, false, model)
 end
 
-local function sample(str, num, space, temperature)
+local function sample(str, num, space, model, embedder, recurrent, classifier, temperature)
     local num = num or 50
     local temperature = temperature or 1
     local function smp(preds)
@@ -138,18 +182,22 @@ local function sample(str, num, space, temperature)
     end
 
 
-    --recurrent:evaluate()
-    --recurrent:single()
+    recurrent:evaluate()
+    recurrent:single()
 
-    --local sampleModel = nn.Sequential():add(embedder):add(recurrent):add(classifier):add(nn.SoftMax():type(TensorType))
+    local sampleModel = nn.Sequential():add(embedder):add(recurrent):add(classifier):add(nn.SoftMax():type(TensorType))
 
+	-- print(sampleModel)
     local pred, predText, embedded
     if str then
         local encoded = data.encode(str)
-		print(#encoded) 
+		print(encoded) 
 		print(encoded:size())
         for i=1, encoded:nElement() do
-            pred = model:forward(encoded:narrow(1,i,1))
+            -- pred = model:forward(encoded:narrow(1,i,1))
+			-- print(encoded:narrow(1,i,1))
+			pred = sampleModel:forward(encoded:narrow(1,i,1))
+			-- pred = sampleModel:forward(1)
         end
         wordNum = smp(pred)
 
@@ -172,13 +220,33 @@ local function sample(str, num, space, temperature)
 end
 
 -----------------------------------------------------------------------------
+
 ----------------Testing a loaded model
 if paths.filep(opt.load) then
     -- model = torch.load(opt.load)
     modelConfig = torch.load(opt.load)
-	
+	-- print(modelConfig)
 end
     print('==>Loaded Net from: ' .. opt.load)
+	
+	-- local trainingConfig = require 'utils.trainRecurrent'
+	-- local evaluate = trainingConfig.evaluate
+	-- local sample = trainingConfig.sample
+	-- danny load model
+	 embedder = modelConfig.embedder
+	 recurrent = modelConfig.recurrent
+	 classifier = modelConfig.classifier
+	-- local trainRegime = modelConfig.regime
+	local stateSize = modelConfig.stateSize
+	 vocab = modelConfig.vocab
+	 decoder = modelConfig.decoder
+	 model = modelConfig.model
+
+	-- -- Model + Loss:
+	-- local model = nn.Sequential()
+	-- model:add(embedder)
+	-- model:add(recurrent)
+	-- model:add(nn.TemporalModule(classifier))
 	-- print '\n==> Network'
 	-- print(model)
 
@@ -188,10 +256,10 @@ end
 
 --print('\nEpoch ' .. epoch ..'\n')
 
-local LossTest = evaluate(data.testData)
-
-print('\nSampled Text:\n' .. sample('Buy low, sell high is the', 50, true))
-
+local LossTest = evaluate(data.testData, model)
 print('\nTest Perplexity: ' .. torch.exp(LossTest))
+
+print('\nSampled Text:\n' .. sample('Buy low, sell high is the', 50, true, model, embedder, recurrent, classifier))
+
 
 
