@@ -10,12 +10,13 @@ cmd:text('Evaluate a RNNLM')
 cmd:text('Options:')
 cmd:option('--xplogpath', '', 'path to a previously saved xplog containing model')
 cmd:option('--cuda', false, 'model was saved with cuda')
+-- cmd:option('--cuda', true, 'model was saved with cuda')
 cmd:option('--device', 1, 'which GPU device to use')
-cmd:option('--nsample', -1, 'sample this many words from the language model')
+cmd:option('--nsample', 20, 'sample this many words from the language model')
 cmd:option('--temperature', 1, 'temperature of multinomial. Increase to sample wildly, reduce to be more deterministic.')
 cmd:option('--dumpcsv', false, 'dump training and validation error to CSV file')
 --danny add predict parameter
-cmd:option('--predict', '', 'complete a given sentence')
+cmd:option('--predict', 'Buy low, sell high is the', 'complete a given sentence')
 cmd:option('--predictnum', 5, 'complete a given sentence, sample this many words from the language model')
 cmd:text()
 local opt = cmd:parse(arg or {})
@@ -30,13 +31,20 @@ if opt.cuda then
    cutorch.setDevice(opt.device)
 end
 
+-- danny weird bad words set
+function Set (list)
+  local set = {}
+  for _, l in ipairs(list) do set[l] = true end
+  return set
+end
+
 local xplog = torch.load(opt.xplogpath)
 local lm = xplog.model
 local criterion = xplog.criterion
 local targetmodule = xplog.targetmodule
 
-print("Hyper-parameters (xplog.opt):")
-print(xplog.opt)
+--print("Hyper-parameters (xplog.opt):")
+--print(xplog.opt)
 
 local trainerr = xplog.trainnceloss or xplog.trainppl
 local validerr = xplog.valnceloss or xplog.valppl
@@ -92,143 +100,157 @@ lm:evaluate()
 
 -- danny predict sentence
 if opt.predict ~= '' then
-	print(opt.predict)
-	opt.predict = string.lower(opt.predict) -- lower case
-	local predictWords = opt.predict:split(' ')
-	-- print(#predictWords..' words in prediction sentence')
-    
-	local inputs = torch.LongTensor(1,1) -- seqlen x batchsize
-	if opt.cuda then inputs = inputs:cuda() end
-	
-	local sampletext = {}
-	local buffer = torch.FloatTensor()
-	-- -- putting sentence to model
-	-- for i=1, #predictWords do
-		-- -- getting the vocab value of the words
-		-- encoded_number = trainset.vocab[predictWords[i]]
-		-- if not encoded_number then
-			-- encoded_number = -1
-		-- end
+	for i=1, 5 do
+		print(opt.predict)
+		opt.predict = string.lower(opt.predict) -- lower case
+		local predictWords = opt.predict:split(' ')
+		-- print(#predictWords..' words in prediction sentence')
+
+		local inputs = torch.LongTensor(1,1) -- seqlen x batchsize
+		if opt.cuda then inputs = inputs:cuda() end
+
+		local sampletext = {}
+		local buffer = torch.FloatTensor()
+		-- putting sentence to model
+		for i=1, #predictWords do
+			-- getting the vocab value of the words
+			encoded_number = trainset.vocab[predictWords[i]]
+			if not encoded_number then
+				encoded_number = -1
+			end
+			
+			inputs:fill(encoded_number)
+			
+			pred = lm:forward(inputs)[1][1]
+			
+			local output = lm:forward(inputs)[1][1]
+			buffer:resize(output:size()):copy(output)
+			buffer:div(opt.temperature)
+			buffer:exp()
+			local sample = torch.multinomial(buffer, 1, true)
+			local currentword = trainset.ivocab[sample[1]]
+			-- table.insert(sampletext, currentword) -- danny - don't predict while in the sentence itself...
+		end
+		-- getting current word value in vocab
+		local prevword = trainset.vocab[predictWords[#predictWords]]
+		if not prevword then
+			prevword = -1
+		end
 		
-		-- inputs:fill(encoded_number)
+		-- print(prevword)
 		
-		-- pred = lm:forward(inputs)[1][1]
-		
-		-- local output = lm:forward(inputs)[1][1]
-		-- buffer:resize(output:size()):copy(output)
-		-- buffer:div(opt.temperature)
-		-- buffer:exp()
-		-- local sample = torch.multinomial(buffer, 1, true)
-		-- local currentword = trainset.ivocab[sample[1]]
-		-- table.insert(sampletext, currentword)
-		
-	-- end
-	
-	-- getting current word value in vocab
-    local prevword = trainset.vocab[predictWords[#predictWords]]
-    if not prevword then
-		prevword = -1
+		local buffer = torch.FloatTensor()
+		for i=1,opt.nsample do
+			inputs:fill(prevword)
+			local output = lm:forward(inputs)[1][1]
+			buffer:resize(output:size()):copy(output)
+			buffer:div(opt.temperature)
+			buffer:exp()
+			local sample = torch.multinomial(buffer, 1, true)
+			local currentword = trainset.ivocab[sample[1]]
+			-- danny ignoring some weird words
+			local bad_words = Set{ '<eos>' , '<unk>', 'N' }
+			while bad_words[currentword] do
+				sample = torch.multinomial(buffer, 1, true)
+				currentword = trainset.ivocab[sample[1]]
+			end
+			table.insert(sampletext, currentword)
+			-- prevword = trainset.vocab[predictWords[i]]
+			-- if not prevword then
+				-- prevword = -1
+			-- end
+			prevword = sample[1]
+		end
+		print(table.concat(sampletext, ' '))
+		print ('\n')
 	end
-	
-	-- print(prevword)
-	
-	local buffer = torch.FloatTensor()
-	for i=1,opt.nsample do
-		inputs:fill(prevword)
-		local output = lm:forward(inputs)[1][1]
-		buffer:resize(output:size()):copy(output)
-		buffer:div(opt.temperature)
-		buffer:exp()
-		local sample = torch.multinomial(buffer, 1, true)
-		local currentword = trainset.ivocab[sample[1]]
-		table.insert(sampletext, currentword)
-		-- prevword = trainset.vocab[predictWords[i]]
-		-- if not prevword then
-			-- prevword = -1
-		-- end
-		prevword = sample[1]
+--else
+	local xplog = torch.load(opt.xplogpath)
+	local lm = xplog.model
+	local criterion = xplog.criterion
+	local targetmodule = xplog.targetmodule
+	local sumErr, count = 0, 0
+	lm:forget()
+	lm:evaluate()
+
+	for i, inputs, targets in testset:subiter(xplog.opt.seqlen or 100) do
+		inputs:apply(function(x)
+			if x > 0 then
+				count = count + 1
+			end
+		end)
+		local targets = targetmodule:forward(targets)
+		local inputs = opt.nce and {inputs, targets} or inputs
+		local outputs = lm:forward(inputs)
+		local err = criterion:forward(outputs, targets)
+		sumErr = sumErr + err
 	end
-	print(table.concat(sampletext, ' '))
+
+	if count ~= testset:size() then
+	  local meanseqlen = testset:size()/(testset:size() - count)
+	  --print("mean sequence length : "..meanseqlen)
+	end
+
+	--print("sumErr : "..sumErr)
+	--print("count : "..count)
+	print("testset-size : "..testset:size())
+	local ppl = torch.exp(sumErr/testset:size())
+	print("Test PPL : "..ppl)
 else
 	if opt.nsample > 0 then
-	   if xplog.dataset == 'GoogleBillionWords' then
-		  local sampletext = {'<S>'}
-		  local prevword = trainset.vocab['<S>']
-		  print("prevword")
-		  print(prevword)
-		  assert(prevword)
-		  local inputs = torch.LongTensor(1,1) -- seqlen x batchsize
-		  local targets = opt.cuda and torch.CudaTensor(1) or torch.LongTensor(1) -- dummy tensor
-		  local buffer = torch.FloatTensor()
-		  for i=1,opt.nsample do
-			 inputs:fill(prevword)
-			 local output = lm:forward({inputs,{targets}})[1][1]
-			 buffer:resize(output:size()):copy(output)
-			 buffer:div(opt.temperature)
-			 buffer:exp()
-			 local sample = torch.multinomial(buffer, 1, true)
-			 local currentword = trainset.ivocab[sample[1]]
-			 table.insert(sampletext, currentword)
-			 if currentword == '</S>' then
+	   	if xplog.dataset == 'GoogleBillionWords' then
+			local sampletext = {'<S>'}
+			local prevword = trainset.vocab['<S>']
+			print("prevword")
+			print(prevword)
+			assert(prevword)
+			local inputs = torch.LongTensor(1,1) -- seqlen x batchsize
+			local targets = opt.cuda and torch.CudaTensor(1) or torch.LongTensor(1) -- dummy tensor
+			local buffer = torch.FloatTensor()
+			for i=1,opt.nsample do
+				inputs:fill(prevword)
+				local output = lm:forward({inputs,{targets}})[1][1]
+				buffer:resize(output:size()):copy(output)
+				buffer:div(opt.temperature)
+				buffer:exp()
+				local sample = torch.multinomial(buffer, 1, true)
+				local currentword = trainset.ivocab[sample[1]]
+				table.insert(sampletext, currentword)
+				if currentword == '</S>' then
 				-- sentences were trained independently, so we explicitly tell it to start a new sentence
 				lm:forget()
 				prevword = trainset.vocab['<S>']
 				table.insert(sampletext, '\n<S>')
-			 else
+				else
 				prevword = sample[1]
-			 end
-		  end
-		  print(table.concat(sampletext, ' '))
-	   else
-		  local sampletext = {}
-		  -- local prevword = trainset.vocab['<eos>']
-		  -- danny in our dataset it's different
-		  local prevword = trainset.vocab['<unk>']
-		  print("prevword")
-		  print(prevword)
-		  assert(prevword)
-		  local inputs = torch.LongTensor(1,1) -- seqlen x batchsize
-		  if opt.cuda then inputs = inputs:cuda() end
-		  local buffer = torch.FloatTensor()
-		  for i=1,opt.nsample do
-			 inputs:fill(prevword)
-			 local output = lm:forward(inputs)[1][1]
-			 buffer:resize(output:size()):copy(output)
-			 buffer:div(opt.temperature)
-			 buffer:exp()
-			 local sample = torch.multinomial(buffer, 1, true)
-			 local currentword = trainset.ivocab[sample[1]]
-			 table.insert(sampletext, currentword)
-			 prevword = sample[1]
-		  end
-		  print(table.concat(sampletext, ' '))
-	   end
-	else
-	   local sumErr, count = 0, 0
-	   
-	   for i, inputs, targets in testset:subiter(xplog.opt.seqlen or 100) do
-		  inputs:apply(function(x)
-			 if x > 0 then
-				count = count + 1
-			 end
-		  end)
-		  local targets = targetmodule:forward(targets)
-		  local inputs = opt.nce and {inputs, targets} or inputs
-		  local outputs = lm:forward(inputs)
-		  local err = criterion:forward(outputs, targets)
-		  sumErr = sumErr + err
-	   end
-	   
-	   if count ~= testset:size() then
-		  local meanseqlen = testset:size()/(testset:size() - count)
-		  print("mean sequence length : "..meanseqlen)
-	   end
-
-	   print("sumErr : "..sumErr)
-	   print("count : "..count)
-	   local ppl = torch.exp(sumErr/count)
-	   print("Test PPL : "..ppl)
+				end
+			end
+		  	print(table.concat(sampletext, ' '))
+		else
+			local sampletext = {}
+			-- local prevword = trainset.vocab['<eos>']
+			-- danny in our dataset it's different
+			local prevword = trainset.vocab['<unk>']
+			print("prevword")
+			print(prevword)
+			assert(prevword)
+			local inputs = torch.LongTensor(1,1) -- seqlen x batchsize
+			if opt.cuda then inputs = inputs:cuda() end
+			local buffer = torch.FloatTensor()
+			for i=1,opt.nsample do
+				inputs:fill(prevword)
+				local output = lm:forward(inputs)[1][1]
+				buffer:resize(output:size()):copy(output)
+				buffer:div(opt.temperature)
+				buffer:exp()
+				local sample = torch.multinomial(buffer, 1, true)
+				local currentword = trainset.ivocab[sample[1]]
+				table.insert(sampletext, currentword)
+				prevword = sample[1]
+			end
+			print(table.concat(sampletext, ' '))
+		end
 	end
+
+
 end
-
-
